@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, 
+    initial-scale=1.0"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>game</title>
+    <style>
+      #myCanvas {
+        line-height: 0;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      .cell {
+        width: 20px;
+        height: 20px;
+        display: inline-block;
+      }
+
+      .cellMirror {
+        width: 20px;
+        height: 20px;
+        display: inline-block;
+        transform: scale(-1, 1);
+      }
+
+      .room {
+        background-color: red;
+      }
+    </style>
+  </head>
+  <body style="background-color: #555">
+    <div id="myCanvas"></div>
+    <div style="display: flex">
+      <h1 class="power">Power <span id="power"></span></h1>
+      <h1 class="health">
+        HP:
+        <span id="health"></span>
+      </h1>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        let canvas = document.getElementById("myCanvas");
+        let hp = document.getElementById("health");
+        let healthValue = 100;
+        hp.textContent = healthValue;
+
+        let power = document.getElementById("power");
+        let powerValue = 50;
+        power.textContent = powerValue;
+
+        let width = 44;
+        let height = 24;
+
+        let field = new Array(height)
+          .fill(null)
+          .map(() => Array(width).fill(0));
+
+        let cellSize = 40;
+
+        let bg = new Image(cellSize, cellSize);
+        bg.src = "./images/bg.png";
+
+        let wall = new Image(cellSize, cellSize);
+        wall.src = "./images/wall.png";
+
+        let player = new Image(cellSize, cellSize);
+        player.src = "./images/player.png";
+
+        let sword = new Image(cellSize, cellSize);
+        sword.src = "./images/sword.png";
+
+        let reg = new Image(cellSize, cellSize);
+        reg.src = "./images/regeneration.png";
+
+        let enemy = new Image(cellSize, cellSize);
+        enemy.src = "./images/enemy.png";
+
+        function getRandom(max, min) {
+          return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function createRandomRoom() {
+          const roomWidth = getRandom(6, 0) + 3;
+          const roomHeight = getRandom(6, 0) + 3;
+          const startX = getRandom(width - roomWidth - 2, 0) + 1;
+          const startY = getRandom(height - roomHeight - 2, 0) + 1;
+
+          if (field[startY][startX] !== 3 && field[startY][startX] !== 1) {
+            for (let i = startY; i < startY + roomHeight; i++) {
+              for (let j = startX; j < startX + roomWidth; j++) {
+                let cell = document.createElement("div");
+                cell.className = "cell";
+                field[i][j] = 3;
+
+                if (
+                  i === startY ||
+                  i === startY + roomHeight - 1 ||
+                  j === startX ||
+                  j === startX + roomWidth - 1
+                ) {
+                  if (
+                    i === Math.floor(roomHeight / 2 + startY) ||
+                    j === Math.floor(roomWidth / 2 + startX)
+                  ) {
+                    field[i][j] = 3;
+                  } else {
+                    field[i][j] = 1;
+                  }
+                  cell.classList.add("room");
+                }
+              }
+            }
+          }
+        }
+
+        function createRandomRooms(count) {
+          for (let i = 0; i < count; i++) {
+            createRandomRoom();
+          }
+        }
+
+        let playerX = getRandom(width - 2, 0) + 1;
+        let playerY = getRandom(height - 2, 0) + 1;
+
+        let regY, regX;
+
+        function generateReg() {
+          regY = getRandom(height, 1);
+          regX = getRandom(width, 1);
+        }
+
+        for (let i = 0; i < 2; i++) {
+          generateReg();
+
+          if (field[regY][regX] === 0 || field[regY][regX] === 3) {
+            field[regY][regX] = 5;
+          } else {
+            generateReg();
+            i--;
+          }
+        }
+
+        function regPlus() {
+          regY = 0;
+          regX = 0;
+          if (healthValue < 100) {
+            healthValue = healthValue + 20;
+            hp.textContent = healthValue;
+          }
+        }
+
+        function regMinus() {
+          healthValue = healthValue - 20;
+          hp.textContent = healthValue;
+          if (healthValue <= 0) {
+            alert("gameOver, please restart this page!");
+          }
+        }
+
+        let enemies = [];
+        let enemyY, enemyX;
+
+        function generateEnemy() {
+          for (let i = 0; i < 10; i++) {
+            let enemyY = Math.floor(Math.random() * height);
+            let enemyX = Math.floor(Math.random() * width);
+            let enemyHP = 100;
+
+            if (field[enemyY][enemyX] === 0 || field[enemyY][enemyX] === 3) {
+              enemies.push({ y: enemyY, x: enemyX, hp: enemyHP });
+              field[enemyY][enemyX] = 6;
+            }
+          }
+        }
+
+        generateEnemy();
+
+        let swordY, swordX;
+        function generateSword() {
+          swordY = getRandom(height, 1);
+          swordX = getRandom(width, 1);
+        }
+
+        for (let i = 0; i < 2; i++) {
+          generateSword();
+          if (field[swordY][swordX] === 0 || field[swordY][swordX] === 3) {
+            field[swordY][swordX] = 4;
+          } else {
+            generateSword();
+            i--;
+          }
+        }
+
+        function powerPlus() {
+          if (powerValue <= 50) {
+            powerValue = powerValue + 50;
+            power.textContent = powerValue;
+            swordY, (swordX = 0);
+            field[swordY][swordX] = 0;
+            console.log("sword");
+          }
+        }
+
+        function fieldMatrix() {
+          canvas.innerHTML = "";
+
+          for (let matrixY = 0; matrixY < field.length; matrixY++) {
+            for (let matrixX = 0; matrixX < field[matrixY].length; matrixX++) {
+              let cell = document.createElement("div");
+              cell.className = "cell";
+
+              if (
+                field[matrixY][matrixX] === 0 ||
+                field[matrixY][matrixX] === 3
+              ) {
+                cell.style.backgroundImage = 'url("' + bg.src + '")';
+                cell.style.backgroundPosition = "center";
+                cell.style.backgroundSize = cellSize + "px";
+              }
+
+              if (
+                matrixX === 0 ||
+                matrixX === field[matrixY].length - 1 ||
+                matrixY === 0 ||
+                matrixY === field.length - 1
+              ) {
+                field[matrixY][matrixX] = 1;
+              }
+
+              if (field[matrixY][matrixX] === 1) {
+                cell.style.backgroundImage = 'url("' + wall.src + '")';
+                cell.style.backgroundPosition = "center";
+                cell.style.backgroundSize = cellSize + "px";
+              }
+
+              if (field[matrixY][matrixX] === 5) {
+                cell.style.backgroundImage = 'url("' + reg.src + '")';
+                cell.style.backgroundPosition = "center";
+                cell.style.backgroundSize = cellSize + "px";
+              }
+
+              if (field[playerY][playerX] === 5) {
+                regPlus();
+              }
+
+              if (field[matrixY][matrixX] === 6) {
+                cell.style.backgroundImage = 'url("' + enemy.src + '")';
+                cell.style.backgroundPosition = "center";
+                cell.style.backgroundSize = cellSize + "px";
+              }
+
+              if (matrixY === playerY && matrixX === playerX) {
+                field[playerY][playerX] = 9;
+                cell.style.backgroundImage = 'url("' + player.src + '")';
+                cell.style.backgroundPosition = "center";
+                cell.style.backgroundSize = cellSize + "px";
+              }
+
+              if (
+                (playerY + 1 < height && field[playerY + 1][playerX] === 6) ||
+                (playerY - 1 >= 0 && field[playerY - 1][playerX] === 6) ||
+                (playerX + 1 < width && field[playerY][playerX + 1] === 6) ||
+                (playerX - 1 >= 0 && field[playerY][playerX - 1] === 6)
+              ) {
+                regMinus();
+                if (healthValue <= 0) {
+                  break;
+                }
+              }
+
+              if (field[matrixY][matrixX] === 4) {
+                cell.style.backgroundImage = 'url("' + sword.src + '")';
+                cell.style.backgroundPosition = "center";
+                cell.style.backgroundSize = cellSize + "px";
+              }
+
+              if (field[regY][regX] !== 1 || field[regY][regX] !== 9) {
+                field[regY][regX] = 5;
+              }
+
+              if (field[playerY][playerX] === 4) {
+                powerPlus();
+              }
+
+              canvas.appendChild(cell);
+            }
+
+            field[playerY][playerX] = 0;
+            let lineBreak = document.createElement("br");
+            canvas.appendChild(lineBreak);
+          }
+        }
+
+        createRandomRooms(getRandom(6, 1) + 5);
+
+        document.addEventListener("keydown", function (event) {
+          let newPlayerX = playerX;
+          let newPlayerY = playerY;
+
+          switch (event.key) {
+            case "ArrowUp":
+              if (playerY > 1) {
+                newPlayerY = playerY - 1;
+              }
+              break;
+            case "ArrowDown":
+              if (playerY < height - 2) {
+                newPlayerY = playerY + 1;
+              }
+              break;
+            case "ArrowLeft":
+              if (playerX > 1) {
+                newPlayerX = playerX - 1;
+              }
+              break;
+            case "ArrowRight":
+              if (playerX < width - 2) {
+                newPlayerX = playerX + 1;
+              }
+              break;
+            case " ":
+              for (let i = 0; i < enemies.length; i++) {
+                let enemy = enemies[i];
+
+                // if (playerY === enemy.y && playerX === enemy.x) {
+                if (
+                  playerY + 2 === enemy.y ||
+                  playerY - 2 === enemy.y ||
+                  playerX + 2 === enemy.x ||
+                  playerX - 2 === enemy.x ||
+                  playerY + 1 === enemy.y ||
+                  playerY - 1 === enemy.y ||
+                  playerX + 1 === enemy.x ||
+                  playerX - 1 === enemy.x
+                ) {
+                  console.log("Удар");
+                  enemy.hp -= powerValue;
+                  console.log(powerValue);
+                  if (enemy.hp <= 0) {
+                    console.log("Убит");
+                    field[enemy.y][enemy.x] = 0;
+                    enemies.splice(i, 1);
+                    if (enemies.length === 0) {
+                      setTimeout(() => alert("You Win!"), 500);
+                    }
+                  }
+                }
+              }
+              console.log("промах");
+              break;
+          }
+
+          if (
+            newPlayerX >= 0 &&
+            newPlayerX < width &&
+            newPlayerY >= 0 &&
+            newPlayerY < height &&
+            field[newPlayerY][newPlayerX] !== 1
+          ) {
+            playerX = newPlayerX;
+            playerY = newPlayerY;
+            fieldMatrix();
+          }
+        });
+
+        function moveEnemies() {
+          for (let i = 0; i < enemies.length; i++) {
+            let enemy = enemies[i];
+            field[enemy.y][enemy.x] = 0;
+
+            let direction = Math.floor(Math.random() * 4);
+
+            switch (direction) {
+              case 0:
+                if (enemy.y > 1 && field[enemy.y - 1][enemy.x] !== 1) {
+                  enemy.y--;
+                }
+                break;
+              case 1:
+                if (enemy.y < height - 2 && field[enemy.y + 1][enemy.x] !== 1) {
+                  enemy.y++;
+                }
+                break;
+              case 2:
+                if (enemy.x > 1 && field[enemy.y][enemy.x - 1] !== 1) {
+                  enemy.x--;
+                }
+                break;
+              case 3:
+                if (enemy.x < width - 2 && field[enemy.y][enemy.x + 1] !== 1) {
+                  enemy.x++;
+                }
+                break;
+            }
+
+            if (field[enemy.y][enemy.x] === 0) {
+              field[enemy.y][enemy.x] = 6;
+            }
+          }
+
+          fieldMatrix();
+        }
+
+        setInterval(moveEnemies, 500);
+      });
+    </script>
+  </body>
+</html>
