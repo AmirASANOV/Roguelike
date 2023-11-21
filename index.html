@@ -89,6 +89,12 @@
           return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
+        function getRandomCoords() {
+          let y = getRandom(height - 2, 1);
+          let x = getRandom(width - 2, 1);
+          return [y, x];
+        }
+
         function createRandomRoom() {
           const roomWidth = getRandom(6, 0) + 3;
           const roomHeight = getRandom(6, 0) + 3;
@@ -134,13 +140,8 @@
 
         let regY, regX;
 
-        function generateReg() {
-          regY = getRandom(height, 1);
-          regX = getRandom(width, 1);
-        }
-
         for (let i = 0; i < 2; i++) {
-          generateReg();
+          [regY, regX] = getRandomCoords(); // Важно
 
           if (field[regY][regX] === 0 || field[regY][regX] === 3) {
             field[regY][regX] = 5;
@@ -172,8 +173,7 @@
 
         function generateEnemy() {
           for (let i = 0; i < 10; i++) {
-            let enemyY = Math.floor(Math.random() * height);
-            let enemyX = Math.floor(Math.random() * width);
+            let [enemyY, enemyX] = getRandomCoords();
             let enemyHP = 100;
 
             if (field[enemyY][enemyX] === 0 || field[enemyY][enemyX] === 3) {
@@ -186,17 +186,13 @@
         generateEnemy();
 
         let swordY, swordX;
-        function generateSword() {
-          swordY = getRandom(height, 1);
-          swordX = getRandom(width, 1);
-        }
 
         for (let i = 0; i < 2; i++) {
-          generateSword();
+          swordY = getRandom(height - 2, 1);
+          swordX = getRandom(width - 2, 1);
           if (field[swordY][swordX] === 0 || field[swordY][swordX] === 3) {
             field[swordY][swordX] = 4;
           } else {
-            generateSword();
             i--;
           }
         }
@@ -272,7 +268,7 @@
                 (playerX + 1 < width && field[playerY][playerX + 1] === 6) ||
                 (playerX - 1 >= 0 && field[playerY][playerX - 1] === 6)
               ) {
-                regMinus();
+                // regMinus();
                 if (healthValue <= 0) {
                   break;
                 }
@@ -331,17 +327,9 @@
             case " ":
               for (let i = 0; i < enemies.length; i++) {
                 let enemy = enemies[i];
-
-                // if (playerY === enemy.y && playerX === enemy.x) {
                 if (
-                  playerY + 2 === enemy.y ||
-                  playerY - 2 === enemy.y ||
-                  playerX + 2 === enemy.x ||
-                  playerX - 2 === enemy.x ||
-                  playerY + 1 === enemy.y ||
-                  playerY - 1 === enemy.y ||
-                  playerX + 1 === enemy.x ||
-                  playerX - 1 === enemy.x
+                  Math.abs(playerY - enemy.y) < 3 &&
+                  Math.abs(playerX - enemy.x) < 3
                 ) {
                   console.log("Удар");
                   enemy.hp -= powerValue;
@@ -376,36 +364,27 @@
         function moveEnemies() {
           for (let i = 0; i < enemies.length; i++) {
             let enemy = enemies[i];
-            field[enemy.y][enemy.x] = 0;
 
-            let direction = Math.floor(Math.random() * 4);
+            let direction = getRandom(3, 0);
+            field[enemy.y][enemy.x] = 0;
 
             switch (direction) {
               case 0:
-                if (enemy.y > 1 && field[enemy.y - 1][enemy.x] !== 1) {
-                  enemy.y--;
-                }
+                if (enemy.y > 1 && field[enemy.y - 1][enemy.x] !== 1) enemy.y--;
                 break;
               case 1:
-                if (enemy.y < height - 2 && field[enemy.y + 1][enemy.x] !== 1) {
+                if (enemy.y < height - 2 && field[enemy.y + 1][enemy.x] !== 1)
                   enemy.y++;
-                }
                 break;
               case 2:
-                if (enemy.x > 1 && field[enemy.y][enemy.x - 1] !== 1) {
-                  enemy.x--;
-                }
+                if (enemy.x > 1 && field[enemy.y][enemy.x - 1] !== 1) enemy.x--;
                 break;
               case 3:
-                if (enemy.x < width - 2 && field[enemy.y][enemy.x + 1] !== 1) {
+                if (enemy.x < width - 2 && field[enemy.y][enemy.x + 1] !== 1)
                   enemy.x++;
-                }
                 break;
             }
-
-            if (field[enemy.y][enemy.x] === 0) {
-              field[enemy.y][enemy.x] = 6;
-            }
+            field[enemy.y][enemy.x] = 6;
           }
 
           fieldMatrix();
